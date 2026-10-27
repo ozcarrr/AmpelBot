@@ -1,0 +1,3 @@
+"""
+AmpelBot Backend Package
+"""

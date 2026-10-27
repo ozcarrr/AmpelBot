@@ -1,0 +1,120 @@
+/* AmpelBot - Telemetry & Industrial Instrumentation Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #090d16;
+  color: #e2e8f0;
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Industrial Panel Containers */
+.glass-panel {
+  background: #0d1320;
+  border: 1px solid #1e293b;
+}
+
+.glass-panel-accent {
+  background: #101726;
+  border: 1px solid #2563eb;
+}
+
+/* ==========================================================================
+   TRAFFIC LIGHT (AMPEL) INDUSTRIAL TELEMETRY MONITOR
+   Reads as a deterministic industrial status indicator, not an arcade fixture.
+   ========================================================================== */
+
+.traffic-light-housing {
+  background: #05080f;
+  border: 1px solid #1e293b;
+}
+
+.ampel-lens {
+  position: relative;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  opacity: 0.3;
+}
+
+/* Inactive Lenses: Darkened indicator lamps */
+.lens-red {
+  background: #2b0b0b;
+  border: 1px solid #491212;
+}
+.lens-yellow {
+  background: #2b2006;
+  border: 1px solid #4a3809;
+}
+.lens-green {
+  background: #062319;
+  border: 1px solid #0b3d2b;
+}
+
+/* Active State: Clean, high-contrast, deterministic illumination without arcade bloom */
+.ampel-active-red .lens-red {
+  opacity: 1;
+  background: #ef4444;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.ampel-active-yellow .lens-yellow {
+  opacity: 1;
+  background: #eab308;
+  border: 1px solid #fef08a;
+  box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+}
+
+.ampel-active-green .lens-green {
+  opacity: 1;
+  background: #10b981;
+  border: 1px solid #6ee7b7;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+/* AG Grid Dark Theme Customization */
+.ag-theme-alpine-dark {
+  --ag-background-color: #0b0f19 !important;
+  --ag-header-background-color: #0f172a !important;
+  --ag-odd-row-background-color: #090d16 !important;
+  --ag-border-color: #1e293b !important;
+  --ag-row-hover-color: #131d31 !important;
+  --ag-font-family: var(--font-sans) !important;
+  --ag-font-size: 12px !important;
+  --ag-header-height: 36px !important;
+  --ag-row-height: 34px !important;
+}
+
+/* Telemetry table cell formatting */
+.ag-theme-alpine-dark .ag-header-cell-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
