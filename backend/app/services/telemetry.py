@@ -9,7 +9,7 @@ import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
-from ..models.inventory import get_internal_product
+from ..models.inventory import get_internal_product, get_bundle_products
 from ..models.schemas import NegotiationLLMOutput
 
 
@@ -115,11 +115,28 @@ class TelemetryStore:
         user_message: str,
         decision: NegotiationLLMOutput,
         deal_token: Optional[str] = None,
+        bundled_skus: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        product = get_internal_product(sku)
-        product_name = product.name if product else sku
-        retail = product.retail_price if product else 0.0
-        floor = product.floor_price if product else 0.0
+        bundle = bundled_skus or decision.bundled_skus
+        if bundle and len(bundle) > 1:
+            try:
+                products = get_bundle_products(bundle)
+                product_name = " + ".join(p.name[:18] for p in products)
+                retail = round(sum(p.retail_price for p in products), 2)
+                floor = round(sum(p.floor_price for p in products), 2)
+                display_sku = " + ".join(sorted(bundle)) + " [BUNDLE]"
+            except Exception:
+                product = get_internal_product(sku)
+                product_name = product.name if product else sku
+                retail = product.retail_price if product else 0.0
+                floor = product.floor_price if product else 0.0
+                display_sku = sku
+        else:
+            product = get_internal_product(sku)
+            product_name = product.name if product else sku
+            retail = product.retail_price if product else 0.0
+            floor = product.floor_price if product else 0.0
+            display_sku = sku
 
         matches = re.findall(r"\$?\s*([0-9]+(?:\.[0-9]{1,2})?)", user_message)
         buyer_offer = float(matches[-1]) if matches else None
@@ -145,7 +162,7 @@ class TelemetryStore:
             "id": f"AUDIT-{uuid.uuid4().hex[:6].upper()}",
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "session_id": session_id,
-            "sku": sku,
+            "sku": display_sku,
             "product_name": product_name[:40],
             "retail_price": retail,
             "buyer_offer": buyer_offer,
@@ -156,6 +173,7 @@ class TelemetryStore:
             "reasoning_summary": decision.reasoning_summary,
             "firewall_triggered": firewall_triggered,
             "deal_token_issued": bool(deal_token),
+            "bundled_skus": bundle if bundle and len(bundle) > 1 else None,
         }
 
         with self._lock:
@@ -185,9 +203,18 @@ class TelemetryStore:
             margin_retained_dollars = []
             margin_retained_pcts = []
             for e in green_events:
-                prod = get_internal_product(e.get("sku", ""))
-                floor = prod.floor_price if prod else 0.0
-                retail = prod.retail_price if prod else (e.get("retail_price") or floor)
+                if e.get("bundled_skus"):
+                    try:
+                        prods = get_bundle_products(e["bundled_skus"])
+                        floor = sum(p.floor_price for p in prods)
+                        retail = sum(p.retail_price for p in prods)
+                    except Exception:
+                        floor = 0.0
+                        retail = e.get("retail_price", 0.0)
+                else:
+                    prod = get_internal_product(e.get("sku", ""))
+                    floor = prod.floor_price if prod else 0.0
+                    retail = prod.retail_price if prod else (e.get("retail_price") or floor)
                 price = e.get("final_price", floor)
                 dollar_buffer = max(0.0, price - floor)
                 margin_retained_dollars.append(dollar_buffer)

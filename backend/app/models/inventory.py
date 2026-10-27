@@ -66,6 +66,17 @@ def get_internal_product(sku: str) -> Optional[ProductInternal]:
     return DEMO_INVENTORY.get(sku.upper().strip())
 
 
+def get_bundle_products(skus: List[str]) -> List[ProductInternal]:
+    """Retrieves list of internal product models for a bundle; raises KeyError if missing."""
+    items = []
+    for s in skus:
+        item = get_internal_product(s)
+        if not item:
+            raise KeyError(f"Product with SKU '{s}' not found in inventory catalog.")
+        items.append(item)
+    return items
+
+
 def get_public_product(sku: str) -> Optional[ProductPublic]:
     item = get_internal_product(sku)
     return item.to_public() if item else None

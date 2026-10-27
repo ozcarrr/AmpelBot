@@ -10,10 +10,10 @@ from ..models.schemas import (
     CreateOrderResponse,
     CaptureOrderResponse,
 )
-from ..models.inventory import get_internal_product
+from ..models.inventory import get_internal_product, get_bundle_products
 from ..services.negotiator import MarginViolationError, ProductNotFoundError
 from ..services.paypal_client import paypal_client, PayPalAPIError
-from ..services.deal_signer import verify_deal_token
+from ..services.deal_signer import verify_deal_token, canonicalize_skus
 from ..services.session_store import session_store
 
 router = APIRouter(prefix="/api/orders", tags=["Orders"])
@@ -26,17 +26,37 @@ router = APIRouter(prefix="/api/orders", tags=["Orders"])
     summary="Create PayPal checkout order with validated pricing",
 )
 def create_negotiated_order(payload: CreateOrderRequest):
-    product = get_internal_product(payload.sku)
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "PRODUCT_NOT_FOUND", "message": f"Product with SKU '{payload.sku}' not found."},
-        )
+    if payload.bundled_skus and len(payload.bundled_skus) > 0:
+        resolved_skus = payload.bundled_skus
+    elif "+" in payload.sku:
+        resolved_skus = [s.strip() for s in payload.sku.split("+") if s.strip()]
+    else:
+        resolved_skus = [payload.sku.strip()]
+
+    is_bundle = len(resolved_skus) > 1
+
+    if is_bundle:
+        try:
+            bundle_products = get_bundle_products(resolved_skus)
+            retail_reference_price = sum(p.retail_price for p in bundle_products)
+        except (KeyError, ProductNotFoundError) as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "PRODUCT_NOT_FOUND", "message": str(e)},
+            )
+    else:
+        product = get_internal_product(resolved_skus[0])
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "PRODUCT_NOT_FOUND", "message": f"Product with SKU '{resolved_skus[0]}' not found."},
+            )
+        retail_reference_price = product.retail_price
 
     if payload.deal_token:
         is_token_valid = verify_deal_token(
             deal_token=payload.deal_token,
-            sku=payload.sku,
+            sku=resolved_skus if is_bundle else payload.sku,
             proposed_price=payload.negotiated_price,
         )
         if not is_token_valid:
@@ -49,10 +69,11 @@ def create_negotiated_order(payload: CreateOrderRequest):
             )
     elif payload.session_id:
         session = session_store.get_session(payload.session_id)
+        session_skus = session.bundled_skus or ([session.sku] if session else [])
         is_invalid_session = (
             not session
             or not session.deal_locked
-            or session.sku != payload.sku.strip().upper()
+            or canonicalize_skus(session_skus) != canonicalize_skus(resolved_skus)
             or session.agreed_price is None
             or abs(session.agreed_price - payload.negotiated_price) > 0.009
         )
@@ -64,7 +85,7 @@ def create_negotiated_order(payload: CreateOrderRequest):
                     "message": "No locked deal found for this session matching the requested SKU and price.",
                 },
             )
-    elif settings.REQUIRE_DEAL_LOCK and payload.negotiated_price < product.retail_price:
+    elif settings.REQUIRE_DEAL_LOCK and payload.negotiated_price < retail_reference_price:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
@@ -75,8 +96,9 @@ def create_negotiated_order(payload: CreateOrderRequest):
 
     try:
         order_dict = paypal_client.create_order(
-            sku=payload.sku,
+            sku=resolved_skus if is_bundle else payload.sku,
             negotiated_price=payload.negotiated_price,
+            bundled_skus=resolved_skus if is_bundle else None,
         )
         return CreateOrderResponse(**order_dict)
 

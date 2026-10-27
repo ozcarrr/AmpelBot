@@ -54,6 +54,7 @@ const PayPalSDKManager = {
   async renderButtons({
     containerId = 'paypal-button-container',
     sku,
+    bundled_skus = null,
     negotiated_price,
     deal_token = null,
     session_id = null,
@@ -88,6 +89,7 @@ const PayPalSDKManager = {
         createOrder: async () => {
           const payload = {
             sku: sku,
+            bundled_skus: bundled_skus,
             negotiated_price: parseFloat(negotiated_price),
             deal_token: deal_token,
             session_id: session_id,
@@ -138,12 +140,13 @@ const PayPalSDKManager = {
     }
   },
 
-  async simulateInstantCheckout({ sku, negotiated_price, deal_token, session_id }) {
+  async simulateInstantCheckout({ sku, bundled_skus = null, negotiated_price, deal_token, session_id }) {
     const createRes = await fetch('/api/orders/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sku: sku,
+        bundled_skus: bundled_skus,
         negotiated_price: parseFloat(negotiated_price),
         deal_token: deal_token,
         session_id: session_id,

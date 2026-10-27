@@ -4,7 +4,7 @@ Caches conversation history with an upper bound on turns and tracks locked deal 
 """
 
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
 from ..models.schemas import (
@@ -12,7 +12,7 @@ from ..models.schemas import (
     ChatSessionResponse,
     NegotiationLLMOutput,
 )
-from ..models.inventory import get_internal_product
+from ..models.inventory import get_internal_product, get_bundle_products
 
 
 class SessionStore:
@@ -21,13 +21,19 @@ class SessionStore:
         self._sessions: Dict[str, Dict[str, Any]] = {}
         self.max_turns = max_turns
 
-    def get_or_create_session(self, session_id: str, sku: str) -> Dict[str, Any]:
+    def get_or_create_session(
+        self,
+        session_id: str,
+        sku: str,
+        bundled_skus: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         with self._lock:
             now_iso = datetime.now(timezone.utc).isoformat()
             if session_id not in self._sessions:
                 self._sessions[session_id] = {
                     "session_id": session_id,
                     "sku": sku.strip().upper(),
+                    "bundled_skus": bundled_skus or ([sku.strip().upper()] if sku else None),
                     "history": [],
                     "traffic_light": "YELLOW",
                     "deal_locked": False,
@@ -39,6 +45,8 @@ class SessionStore:
             session = self._sessions[session_id]
             if not session.get("sku") and sku:
                 session["sku"] = sku.strip().upper()
+            if bundled_skus:
+                session["bundled_skus"] = bundled_skus
             return session
 
     def get_session(self, session_id: str) -> Optional[ChatSessionResponse]:
@@ -48,18 +56,33 @@ class SessionStore:
                 return None
 
             sku = raw.get("sku")
-            product = get_internal_product(sku) if sku else None
+            bundled_skus = raw.get("bundled_skus")
+
+            if bundled_skus and len(bundled_skus) > 1:
+                try:
+                    products = get_bundle_products(bundled_skus)
+                    product_name = " + ".join(p.name for p in products)
+                    retail_price = sum(p.retail_price for p in products)
+                except Exception:
+                    product = get_internal_product(sku) if sku else None
+                    product_name = product.name if product else None
+                    retail_price = product.retail_price if product else None
+            else:
+                product = get_internal_product(sku) if sku else None
+                product_name = product.name if product else None
+                retail_price = product.retail_price if product else None
 
             return ChatSessionResponse(
                 session_id=raw["session_id"],
                 sku=sku,
-                product_name=product.name if product else None,
-                retail_price=product.retail_price if product else None,
+                product_name=product_name,
+                retail_price=retail_price,
                 history=[ChatMessage(**m) for m in raw.get("history", [])],
                 traffic_light=raw.get("traffic_light", "YELLOW"),
                 deal_locked=raw.get("deal_locked", False),
                 agreed_price=raw.get("agreed_price"),
                 deal_token=raw.get("deal_token"),
+                bundled_skus=bundled_skus,
                 created_at=raw.get("created_at", ""),
                 updated_at=raw.get("updated_at", ""),
             )
@@ -86,6 +109,7 @@ class SessionStore:
                 "counter_offer_price": None,
                 "agreed_price": None,
                 "reasoning_summary": None,
+                "bundled_skus": None,
                 "timestamp": now_iso,
             })
 
@@ -96,10 +120,14 @@ class SessionStore:
                 "counter_offer_price": llm_output.counter_offer_price,
                 "agreed_price": llm_output.agreed_price,
                 "reasoning_summary": llm_output.reasoning_summary,
+                "bundled_skus": llm_output.bundled_skus,
                 "timestamp": now_iso,
             })
 
             session["traffic_light"] = llm_output.traffic_light
+
+            if llm_output.bundled_skus:
+                session["bundled_skus"] = llm_output.bundled_skus
 
             if llm_output.traffic_light == "GREEN" and llm_output.agreed_price is not None:
                 session["deal_locked"] = True

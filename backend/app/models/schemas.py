@@ -50,9 +50,22 @@ class MarginValidationResult(BaseModel):
     proposed_price: float
     retail_price: float
     floor_price: float
+    target_price: Optional[float] = None
     discount_amount: float
     discount_percent: float
     reason: str
+
+    @property
+    def composite_retail(self) -> float:
+        return self.retail_price
+
+    @property
+    def composite_floor(self) -> float:
+        return self.floor_price
+
+    @property
+    def composite_target(self) -> Optional[float]:
+        return self.target_price
 
 
 class NegotiationLLMOutput(BaseModel):
@@ -62,6 +75,7 @@ class NegotiationLLMOutput(BaseModel):
     counter_offer_price: Optional[float] = Field(default=None, description="Counter-offer price in USD")
     agreed_price: Optional[float] = Field(default=None, description="Agreed sale price in USD (GREEN only)")
     reasoning_summary: str = Field(..., description="Internal decision rationale")
+    bundled_skus: Optional[List[str]] = Field(default=None, description="Unique SKUs participating in bundle deal")
 
 
 class ChatMessage(BaseModel):
@@ -71,6 +85,7 @@ class ChatMessage(BaseModel):
     counter_offer_price: Optional[float] = None
     agreed_price: Optional[float] = None
     reasoning_summary: Optional[str] = None
+    bundled_skus: Optional[List[str]] = None
     timestamp: str
 
 
@@ -78,6 +93,7 @@ class ChatMessageRequest(BaseModel):
     session_id: str = Field(..., description="Unique conversation session identifier")
     sku: str = Field(..., description="Catalog SKU identifier")
     user_message: str = Field(..., description="Buyer negotiation message")
+    bundled_skus: Optional[List[str]] = Field(default=None, description="Optional bundle context SKUs")
 
 
 class ChatMessageResponse(BaseModel):
@@ -90,6 +106,7 @@ class ChatMessageResponse(BaseModel):
     reasoning_summary: str
     deal_token: Optional[str] = Field(default=None, description="Cryptographic HMAC deal token on GREEN")
     deal_locked: bool = False
+    bundled_skus: Optional[List[str]] = None
     turns_count: int = 1
 
 
@@ -103,16 +120,18 @@ class ChatSessionResponse(BaseModel):
     deal_locked: bool = False
     agreed_price: Optional[float] = None
     deal_token: Optional[str] = None
+    bundled_skus: Optional[List[str]] = None
     created_at: str
     updated_at: str
 
 
 class CreateOrderRequest(BaseModel):
-    sku: str = Field(..., description="Product SKU code")
+    sku: str = Field(..., description="Product SKU code or canonical bundle SKU (e.g. AMP-01+AMP-03)")
     negotiated_price: float = Field(..., description="Agreed sale price in USD", gt=0)
     buyer_notes: Optional[str] = Field(default=None, description="Transaction notes")
     deal_token: Optional[str] = Field(default=None, description="HMAC deal token")
     session_id: Optional[str] = Field(default=None, description="Associated session ID")
+    bundled_skus: Optional[List[str]] = Field(default=None, description="Explicit bundle SKU list")
 
 
 class CreateOrderResponse(BaseModel):
@@ -126,6 +145,7 @@ class CreateOrderResponse(BaseModel):
     savings_amount: float
     currency: str = "USD"
     created_at: str
+    bundled_skus: Optional[List[str]] = None
 
 
 class CaptureOrderResponse(BaseModel):

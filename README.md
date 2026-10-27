@@ -2,7 +2,7 @@
 
 AmpelBot is an autonomous micro-negotiation service with deterministic margin enforcement and cryptographic deal authorization for PayPal Orders V2 transactions.
 
-[![Tests: Pytest](https://img.shields.io/badge/pytest-46%20passed-10b981?style=flat-square&logo=pytest&logoColor=white)](backend/tests/)
+[![Tests: Pytest](https://img.shields.io/badge/pytest-57%20passed-10b981?style=flat-square&logo=pytest&logoColor=white)](backend/tests/)
 [![PayPal: Orders V2](https://img.shields.io/badge/PayPal-Orders%20V2%20API-00457C?style=flat-square&logo=paypal&logoColor=white)](https://developer.paypal.com/docs/api/orders/v2/)
 [![AI Engine: Google Gemini](https://img.shields.io/badge/Google%20Gemini-gemini--2.5--flash-8E75C2?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
 [![Telemetry: AG Grid](https://img.shields.io/badge/AG%20Grid-Telemetry%20Audit-00A389?style=flat-square&logo=aggrid&logoColor=white)](https://www.ag-grid.com/)
@@ -133,6 +133,7 @@ flowchart TD
 | Subsystem | Implementation Details | Key Files |
 | :--- | :--- | :--- |
 | **PayPal Orders V2** | Dynamic order creation with negotiated line items, OAuth2 Bearer token caching, capture endpoints, and JavaScript SDK Smart Buttons integration. | [`backend/app/services/paypal_client.py`](file:///home/oscar/paypal-hackathon/backend/app/services/paypal_client.py), [`frontend/js/paypal_sdk.js`](file:///home/oscar/paypal-hackathon/frontend/js/paypal_sdk.js), [`backend/app/routes/orders.py`](file:///home/oscar/paypal-hackathon/backend/app/routes/orders.py) |
+| **AOV Expansion Engine** | Autonomous cross-sell bundling pivoting single-item requests into multi-SKU deals with canonical HMAC deal tokens (`AMP-01+AMP-03`) and itemized PayPal breakdown math. | [`backend/app/services/negotiator.py`](file:///home/oscar/paypal-hackathon/backend/app/services/negotiator.py), [`backend/app/services/deal_signer.py`](file:///home/oscar/paypal-hackathon/backend/app/services/deal_signer.py) |
 | **Negotiation Engine** | Model-agnostic adapter supporting Google Gemini (`gemini-2.5-flash`), OpenAI-compatible providers, and an offline deterministic mathematical engine. | [`backend/app/services/llm_provider.py`](file:///home/oscar/paypal-hackathon/backend/app/services/llm_provider.py), [`backend/app/services/negotiator.py`](file:///home/oscar/paypal-hackathon/backend/app/services/negotiator.py) |
 | **Margin Firewall** | Strict financial validation enforcing positive values, non-zero pricing, and strict floor limits prior to network serialization. | [`backend/app/services/negotiator.py`](file:///home/oscar/paypal-hackathon/backend/app/services/negotiator.py), [`backend/app/services/deal_signer.py`](file:///home/oscar/paypal-hackathon/backend/app/services/deal_signer.py) |
 | **Telemetry & Audit** | In-memory event audit log and metrics accumulator connected to an AG Grid Community data table. | [`backend/app/services/telemetry.py`](file:///home/oscar/paypal-hackathon/backend/app/services/telemetry.py), [`backend/app/routes/merchant.py`](file:///home/oscar/paypal-hackathon/backend/app/routes/merchant.py), [`frontend/js/app.js`](file:///home/oscar/paypal-hackathon/frontend/js/app.js) |
@@ -237,6 +238,15 @@ Endpoint: `http://localhost:8001/`
 2. For headless or popup-blocked environments, trigger the direct capture simulation to execute `/api/orders/create` followed by `/api/orders/{id}/capture`.
 3. Inspect the AG Grid telemetry table to verify captured order settlement.
 
+### Scenario 5: Multi-SKU Cross-Sell Bundle Negotiation & Orders V2 Itemization
+1. Selected item: `AMP-01` ($180.00 Retail, $145.00 Floor).
+2. Trigger the bundle test vector: `"Bundle Request: Include AMP-03 for $175 total"`.
+3. Verification:
+   - System evaluates composite retail ($180 + $49 = $229.00), composite floor ($145 + $25 = $170.00), and validates $175.00 > $170.00.
+   - Status switches to `State: GREEN`, issuing a bundle-bound HMAC token canonically keyed to `AMP-01+AMP-03`.
+   - The PayPal Orders V2 payload itemizes both line items at full catalog prices with a `$54.00` concession under `amount.breakdown.discount`.
+   - Mathematical equality `item_total.value ($229.00) - discount.value ($54.00) == amount.value ($175.00)` is verified to the exact cent.
+
 ---
 
 ## Repository Structure
@@ -263,6 +273,7 @@ paypal-hackathon/
 │   │       └── telemetry.py           # Real-time event logging and KPI aggregation
 │   └── tests/
 │       ├── test_api_routes.py         # Public catalog and order route verification
+│       ├── test_bundle_negotiation.py # Multi-SKU bundle math & Orders V2 breakdown
 │       ├── test_chat_negotiation.py   # State machine transitions and firewall intercepts
 │       ├── test_margin_rules.py       # Mathematical floor constraints validation
 │       └── test_storefront_telemetry.py # Static file mounts and telemetry validation

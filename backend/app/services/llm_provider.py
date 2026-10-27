@@ -81,6 +81,49 @@ class DeterministicMockProvider(BaseLLMProvider):
         floor = thresholds["floor"]
         offer = self._extract_user_offer(user_message)
 
+        # Cross-sell bundling detection
+        bundle_signals = ["bundle", "amp-03", "cross-sell", "cross sell", "package", "combo"]
+        is_bundle_requested = any(s in user_message.lower() for s in bundle_signals)
+        last_turn_was_bundle = any(
+            "amp-03" in m.get("content", "").lower() or "bundle" in m.get("content", "").lower()
+            for m in conversation_history[-2:]
+        ) if conversation_history else False
+
+        if is_bundle_requested or (last_turn_was_bundle and offer is not None and offer >= 170.0):
+            bundled_skus = ["AMP-01", "AMP-03"]
+            composite_retail = 229.00
+            composite_floor = 170.00
+            bundle_deal_price = 175.00
+
+            if offer is None:
+                return NegotiationLLMOutput(
+                    reply_message=f"Cross-sell bundle available: AMP-01 with AMP-03 for ${bundle_deal_price:.2f} total (saves $54.00 off ${composite_retail:.2f} retail).",
+                    traffic_light="YELLOW",
+                    counter_offer_price=bundle_deal_price,
+                    agreed_price=None,
+                    bundled_skus=bundled_skus,
+                    reasoning_summary="Proposed high-AOV cross-sell bundle (AMP-01 + AMP-03).",
+                )
+
+            if offer >= composite_floor:
+                return NegotiationLLMOutput(
+                    reply_message=f"Cross-sell bundle agreed: AMP-01 and AMP-03 for ${offer:.2f}. Checkout authorized.",
+                    traffic_light="GREEN",
+                    counter_offer_price=None,
+                    agreed_price=offer,
+                    bundled_skus=bundled_skus,
+                    reasoning_summary=f"Accepted multi-SKU cross-sell bundle at ${offer:.2f} (above composite floor ${composite_floor:.2f}).",
+                )
+
+            return NegotiationLLMOutput(
+                reply_message=f"Bundle offer ${offer:.2f} is below composite floor. Best bundle offer is ${bundle_deal_price:.2f}.",
+                traffic_light="RED",
+                counter_offer_price=bundle_deal_price,
+                agreed_price=None,
+                bundled_skus=bundled_skus,
+                reasoning_summary=f"Bundle offer ${offer:.2f} is below composite floor ${composite_floor:.2f}. Rejected.",
+            )
+
         if offer is None:
             return NegotiationLLMOutput(
                 reply_message=f"Standard retail price is ${retail:.2f}. Submit an offer to begin negotiation.",

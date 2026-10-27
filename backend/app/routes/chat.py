@@ -57,10 +57,11 @@ async def send_chat_message(payload: ChatMessageRequest):
 
     deal_token = None
     deal_locked = False
+    token_skus = decision.bundled_skus if (decision.bundled_skus and len(decision.bundled_skus) > 1) else sku
     if decision.traffic_light == "GREEN" and decision.agreed_price is not None:
         deal_token = generate_deal_token(
             session_id=payload.session_id,
-            sku=sku,
+            sku=token_skus,
             agreed_price=decision.agreed_price,
         )
         deal_locked = True
@@ -78,6 +79,7 @@ async def send_chat_message(payload: ChatMessageRequest):
         user_message=payload.user_message,
         decision=decision,
         deal_token=deal_token,
+        bundled_skus=decision.bundled_skus,
     )
 
     turns_count = len(updated_session["history"]) // 2
@@ -92,6 +94,7 @@ async def send_chat_message(payload: ChatMessageRequest):
         reasoning_summary=decision.reasoning_summary,
         deal_token=deal_token,
         deal_locked=deal_locked,
+        bundled_skus=decision.bundled_skus,
         turns_count=turns_count,
     )
 

@@ -13,6 +13,7 @@ const AppState = {
   dealLocked: false,
   agreedPrice: null,
   dealToken: null,
+  bundledSkus: null,
   isSending: false,
   gridApi: null,
 };
@@ -22,6 +23,7 @@ const DOM = {
   selectedProductTitle: document.getElementById('selected-product-title'),
   selectedProductSku: document.getElementById('selected-product-sku'),
   selectedProductRetail: document.getElementById('selected-product-retail'),
+  bundleActiveBadge: document.getElementById('bundle-active-badge'),
   ampelHousing: document.getElementById('ampel-housing'),
   ampelStatusBadge: document.getElementById('ampel-status-badge'),
   chatTranscript: document.getElementById('chat-transcript'),
@@ -336,6 +338,14 @@ async function handleSendMessage(userText) {
     const data = await res.json();
     setTrafficLight(data.traffic_light);
 
+    if (data.bundled_skus && data.bundled_skus.length > 1) {
+      AppState.bundledSkus = data.bundled_skus;
+      if (DOM.bundleActiveBadge) {
+        DOM.bundleActiveBadge.classList.remove('hidden');
+        DOM.bundleActiveBadge.textContent = `BUNDLE: ${data.bundled_skus.join(' + ')}`;
+      }
+    }
+
     appendMessage({
       role: 'assistant',
       content: data.reply_message,
@@ -349,7 +359,7 @@ async function handleSendMessage(userText) {
       AppState.dealLocked = true;
       AppState.agreedPrice = data.agreed_price;
       AppState.dealToken = data.deal_token;
-      showDealUnlockedCard(data.agreed_price, data.deal_token);
+      showDealUnlockedCard(data.agreed_price, data.deal_token, data.bundled_skus);
     }
 
     loadTelemetryData();
@@ -369,25 +379,42 @@ async function handleSendMessage(userText) {
   }
 }
 
-function showDealUnlockedCard(agreedPrice, dealToken) {
+function showDealUnlockedCard(agreedPrice, dealToken, bundledSkus = null) {
   if (!DOM.dealUnlockedCard) return;
 
-  const retail = AppState.selectedProduct.retail_price;
+  const activeBundle = bundledSkus || AppState.bundledSkus;
+  const isBundle = activeBundle && activeBundle.length > 1;
+
+  let retail = AppState.selectedProduct ? AppState.selectedProduct.retail_price : agreedPrice;
+  if (isBundle) {
+    const bundleProds = activeBundle.map(s => AppState.products.find(p => p.sku === s)).filter(Boolean);
+    if (bundleProds.length > 0) {
+      retail = bundleProds.reduce((sum, p) => sum + p.retail_price, 0);
+    }
+  }
+
   const savings = Math.max(0, retail - agreedPrice);
-  const savingsPct = ((savings / retail) * 100).toFixed(1);
+  const savingsPct = retail > 0 ? ((savings / retail) * 100).toFixed(1) : '0.0';
 
   if (DOM.dealPriceDisplay) DOM.dealPriceDisplay.textContent = `$${agreedPrice.toFixed(2)}`;
-  if (DOM.dealSavingsDisplay) DOM.dealSavingsDisplay.textContent = `Variance: -$${savings.toFixed(2)} (-${savingsPct}% vs list)`;
+  if (DOM.dealSavingsDisplay) {
+    DOM.dealSavingsDisplay.textContent = isBundle
+      ? `Bundle Concession: -$${savings.toFixed(2)} (-${savingsPct}% vs $${retail.toFixed(2)} composite list)`
+      : `Variance: -$${savings.toFixed(2)} (-${savingsPct}% vs list)`;
+  }
   if (DOM.dealTokenDisplay) {
     DOM.dealTokenDisplay.textContent = dealToken ? `${dealToken.substring(0, 36)}...` : 'Session verified';
   }
+
+  const checkoutSku = isBundle ? activeBundle.slice().sort().join('+') : AppState.selectedSku;
 
   DOM.dealUnlockedCard.classList.remove('hidden');
 
   if (window.PayPalSDKManager) {
     window.PayPalSDKManager.renderButtons({
       containerId: 'paypal-button-container',
-      sku: AppState.selectedSku,
+      sku: checkoutSku,
+      bundled_skus: isBundle ? activeBundle : null,
       negotiated_price: agreedPrice,
       deal_token: dealToken,
       session_id: AppState.sessionId,
@@ -403,11 +430,22 @@ function showDealUnlockedCard(agreedPrice, dealToken) {
 
       try {
         const result = await window.PayPalSDKManager.simulateInstantCheckout({
-          sku: AppState.selectedSku,
+          sku: checkoutSku,
+          bundled_skus: isBundle ? activeBundle : null,
           negotiated_price: agreedPrice,
           deal_token: dealToken,
           session_id: AppState.sessionId,
         });
+        showReceiptModal(result.capture, result.order);
+      } catch (err) {
+        alert(`Checkout simulation failed: ${err.message}`);
+      } finally {
+        DOM.instantCheckoutBtn.disabled = false;
+        DOM.instantCheckoutBtn.textContent = 'Execute Direct Sandbox Capture';
+      }
+    };
+  }
+}
         showReceiptModal(result.capture, result.order);
       } catch (err) {
         alert(`Checkout simulation failed: ${err.message}`);
@@ -482,6 +520,8 @@ function resetConversation(resetSessionId = true) {
   AppState.dealLocked = false;
   AppState.agreedPrice = null;
   AppState.dealToken = null;
+  AppState.bundledSkus = null;
+  if (DOM.bundleActiveBadge) DOM.bundleActiveBadge.classList.add('hidden');
 
   setTrafficLight('YELLOW');
 

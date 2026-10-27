@@ -11,10 +11,15 @@ import json
 import time
 import uuid
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, List
 
 from ..config import settings
-from .negotiator import validate_offer_price, MarginViolationError, ProductNotFoundError
+from .negotiator import (
+    validate_offer_price,
+    validate_bundle_offer,
+    MarginViolationError,
+    ProductNotFoundError,
+)
 
 logger = logging.getLogger("ampelbot.deal_signer")
 
@@ -24,18 +29,37 @@ def _get_secret(secret: Optional[str] = None) -> str:
     return resolved if resolved else "ampelbot-default-secure-signing-secret"
 
 
+def canonicalize_skus(sku_or_skus: Any) -> str:
+    """
+    Canonicalizes single or multiple SKU inputs into a sorted, deduplicated string.
+    Examples:
+        ["AMP-03", "AMP-01"] -> "AMP-01+AMP-03"
+        "AMP-03+AMP-01"      -> "AMP-01+AMP-03"
+        "AMP-01"             -> "AMP-01"
+    """
+    if isinstance(sku_or_skus, (list, tuple, set)):
+        cleaned = [str(s).strip().upper() for s in sku_or_skus if str(s).strip()]
+        return "+".join(sorted(list(set(cleaned))))
+
+    s = str(sku_or_skus).strip().upper()
+    if "+" in s:
+        parts = [p.strip() for p in s.split("+") if p.strip()]
+        return "+".join(sorted(list(set(parts))))
+    return s
+
+
 def generate_deal_token(
     session_id: str,
-    sku: str,
+    sku: Union[str, List[str]],
     agreed_price: float,
     secret: Optional[str] = None,
 ) -> str:
     """
     Issues a cryptographically signed HMAC-SHA256 deal token.
     Token structure: <base64url_json_payload>.<hmac_sha256_hex>
-    Payload includes an ephemeral nonce and issuance timestamp to mitigate replay attempts.
+    Payload binds canonically sorted SKUs, agreed price, ephemeral nonce, and issuance timestamp.
     """
-    clean_sku = sku.strip().upper()
+    clean_sku = canonicalize_skus(sku)
     clean_price = round(float(agreed_price), 2)
     payload_dict = {
         "session_id": session_id,
@@ -44,6 +68,8 @@ def generate_deal_token(
         "issued_at": int(time.time()),
         "nonce": uuid.uuid4().hex[:12],
     }
+    if "+" in clean_sku:
+        payload_dict["bundled_skus"] = clean_sku.split("+")
 
     payload_bytes = json.dumps(payload_dict, separators=(",", ":"), sort_keys=True).encode("utf-8")
     b64_payload = base64.urlsafe_b64encode(payload_bytes).decode("ascii")
@@ -73,7 +99,7 @@ def decode_deal_token(deal_token: str) -> Optional[Dict[str, Any]]:
 
 def verify_deal_token(
     deal_token: str,
-    sku: str,
+    sku: Union[str, List[str]],
     proposed_price: float,
     secret: Optional[str] = None,
     max_age_seconds: int = 3600,
@@ -81,7 +107,7 @@ def verify_deal_token(
     """
     Validates cryptographic authenticity and business constraints of a deal token:
     1. HMAC-SHA256 signature verification with constant-time equality check.
-    2. SKU and price equality against token payload.
+    2. SKU and price equality against token payload (handling canonical multi-SKU bundles).
     3. Expiration window enforcement.
     4. Deterministic margin firewall re-check as a defense-in-depth barrier.
     """
@@ -104,8 +130,9 @@ def verify_deal_token(
     if not payload:
         return False
 
-    token_sku = str(payload.get("sku", "")).strip().upper()
-    if token_sku != sku.strip().upper():
+    token_sku = canonicalize_skus(payload.get("sku", ""))
+    expected_sku = canonicalize_skus(sku)
+    if token_sku != expected_sku:
         return False
 
     token_price = float(payload.get("agreed_price", 0.0))
@@ -119,8 +146,11 @@ def verify_deal_token(
     # Defensive barrier: even if an HMAC signature validates, re-verify mathematical floor
     # boundaries before permitting upstream order creation.
     try:
-        validate_offer_price(sku=sku, proposed_price=token_price)
-    except (MarginViolationError, ProductNotFoundError):
+        if "+" in token_sku:
+            validate_bundle_offer(skus=token_sku.split("+"), proposed_total=token_price)
+        else:
+            validate_offer_price(sku=token_sku, proposed_price=token_price)
+    except (MarginViolationError, ProductNotFoundError, KeyError):
         return False
 
     return True

@@ -5,13 +5,19 @@ and capture execution against the PayPal Sandbox environment.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union
 from datetime import datetime, timedelta, timezone
 import requests
 
 from ..config import settings
-from ..models.inventory import get_internal_product
-from .negotiator import validate_offer_price, MarginViolationError
+from ..models.inventory import get_internal_product, get_bundle_products
+from .negotiator import (
+    validate_offer_price,
+    validate_bundle_offer,
+    MarginViolationError,
+    ProductNotFoundError,
+)
+from .deal_signer import canonicalize_skus
 
 logger = logging.getLogger("ampelbot.paypal")
 
@@ -82,58 +88,140 @@ class PayPalClient:
 
     def create_order(
         self,
-        sku: str,
+        sku: Union[str, List[str]],
         negotiated_price: float,
+        bundled_skus: Optional[List[str]] = None,
         return_url: Optional[str] = None,
         cancel_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Creates an Orders V2 checkout order with authorized negotiated pricing.
+        Supports single-SKU and multi-SKU cross-sell bundles with itemized breakdown.
         Re-verifies margin firewall parameters before initiating outbound API calls.
         """
-        validation = validate_offer_price(sku=sku, proposed_price=negotiated_price)
-        product = get_internal_product(sku)
+        if isinstance(sku, list):
+            resolved_skus = sku
+        elif bundled_skus:
+            resolved_skus = bundled_skus
+        elif "+" in str(sku):
+            resolved_skus = [s.strip() for s in str(sku).split("+") if s.strip()]
+        else:
+            resolved_skus = [str(sku)]
 
-        price_str = f"{validation.proposed_price:.2f}"
-        savings_str = f"{validation.discount_amount:.2f}"
+        is_bundle = len(resolved_skus) > 1
 
-        custom_desc = (
-            f"AmpelBot Deal: {product.name[:50]}... (Saved ${savings_str} off ${product.retail_price:.2f})"
-            if validation.discount_amount > 0
-            else f"AmpelBot Order: {product.name[:50]}... (List Price)"
-        )
+        if is_bundle:
+            validation = validate_bundle_offer(skus=resolved_skus, proposed_total=negotiated_price)
+            canonical_sku = canonicalize_skus(resolved_skus)
+            products = get_bundle_products(canonical_sku.split("+"))
+            composite_retail = round(validation.retail_price, 2)
+            agreed_price = round(validation.proposed_price, 2)
+            discount_amount = round(validation.discount_amount, 2)
+
+            sku_names = " + ".join(p.name[:25] for p in products)
+            custom_desc = (
+                f"AmpelBot Bundle: {sku_names}... (Saved ${discount_amount:.2f} off ${composite_retail:.2f})"
+                if discount_amount > 0
+                else f"AmpelBot Bundle: {sku_names}... (List Price)"
+            )
+
+            # Itemized items list preserving catalog retail prices
+            items_payload = [
+                {
+                    "name": p.name[:127],
+                    "unit_amount": {
+                        "currency_code": "USD",
+                        "value": f"{p.retail_price:.2f}",
+                    },
+                    "quantity": "1",
+                    "category": "PHYSICAL_GOODS" if "Care" not in p.name and "License" not in p.name else "DIGITAL_GOODS",
+                    "sku": p.sku,
+                }
+                for p in products
+            ]
+
+            # Invariant: amount.value == item_total.value - discount.value
+            breakdown_dict: Dict[str, Any] = {
+                "item_total": {
+                    "currency_code": "USD",
+                    "value": f"{composite_retail:.2f}",
+                }
+            }
+            if discount_amount > 0:
+                breakdown_dict["discount"] = {
+                    "currency_code": "USD",
+                    "value": f"{discount_amount:.2f}",
+                }
+
+            purchase_unit = {
+                "reference_id": canonical_sku,
+                "description": custom_desc,
+                "custom_id": f"AMPELBOT_BUNDLE_{canonical_sku}",
+                "amount": {
+                    "currency_code": "USD",
+                    "value": f"{agreed_price:.2f}",
+                    "breakdown": breakdown_dict,
+                },
+                "items": items_payload,
+            }
+
+            display_name = " + ".join(p.name for p in products)
+            display_retail = composite_retail
+            display_sku = canonical_sku
+            bundled_skus_out = [p.sku for p in products]
+
+        else:
+            single_sku = resolved_skus[0]
+            validation = validate_offer_price(sku=single_sku, proposed_price=negotiated_price)
+            product = get_internal_product(single_sku)
+            if not product:
+                raise ProductNotFoundError(single_sku)
+
+            price_str = f"{validation.proposed_price:.2f}"
+            savings_str = f"{validation.discount_amount:.2f}"
+
+            custom_desc = (
+                f"AmpelBot Deal: {product.name[:50]}... (Saved ${savings_str} off ${product.retail_price:.2f})"
+                if validation.discount_amount > 0
+                else f"AmpelBot Order: {product.name[:50]}... (List Price)"
+            )
+
+            purchase_unit = {
+                "reference_id": product.sku,
+                "description": custom_desc,
+                "custom_id": f"AMPELBOT_{product.sku}",
+                "amount": {
+                    "currency_code": "USD",
+                    "value": price_str,
+                    "breakdown": {
+                        "item_total": {
+                            "currency_code": "USD",
+                            "value": price_str,
+                        }
+                    },
+                },
+                "items": [
+                    {
+                        "name": product.name[:127],
+                        "unit_amount": {
+                            "currency_code": "USD",
+                            "value": price_str,
+                        },
+                        "quantity": "1",
+                        "category": "PHYSICAL_GOODS" if "License" not in product.name else "DIGITAL_GOODS",
+                        "sku": product.sku,
+                    }
+                ],
+            }
+
+            display_name = product.name
+            display_retail = product.retail_price
+            display_sku = product.sku
+            bundled_skus_out = None
 
         payload: Dict[str, Any] = {
             "intent": "CAPTURE",
-            "purchase_units": [
-                {
-                    "reference_id": product.sku,
-                    "description": custom_desc,
-                    "custom_id": f"AMPELBOT_{product.sku}",
-                    "amount": {
-                        "currency_code": "USD",
-                        "value": price_str,
-                        "breakdown": {
-                            "item_total": {
-                                "currency_code": "USD",
-                                "value": price_str,
-                            }
-                        },
-                    },
-                    "items": [
-                        {
-                            "name": product.name[:127],
-                            "unit_amount": {
-                                "currency_code": "USD",
-                                "value": price_str,
-                            },
-                            "quantity": "1",
-                            "category": "PHYSICAL_GOODS" if "License" not in product.name else "DIGITAL_GOODS",
-                            "sku": product.sku,
-                        }
-                    ],
-                }
-            ],
+            "purchase_units": [purchase_unit],
             "application_context": {
                 "brand_name": "AmpelBot AI Sales",
                 "landing_page": "NO_PREFERENCE",
@@ -171,13 +259,14 @@ class PayPalClient:
             "order_id": order_data.get("id"),
             "status": order_data.get("status", "CREATED"),
             "approval_url": approval_link,
-            "sku": product.sku,
-            "product_name": product.name,
-            "retail_price": product.retail_price,
+            "sku": display_sku,
+            "product_name": display_name,
+            "retail_price": display_retail,
             "negotiated_price": validation.proposed_price,
             "savings_amount": validation.discount_amount,
             "currency": "USD",
             "created_at": order_data.get("create_time", datetime.now(timezone.utc).isoformat()),
+            "bundled_skus": bundled_skus_out,
         }
 
     def capture_order(self, order_id: str) -> Dict[str, Any]:
