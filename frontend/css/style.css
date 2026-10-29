@@ -1,16 +1,65 @@
-/* AmpelBot - Telemetry & Industrial Instrumentation Design System */
+/* AmpelBot - Neo-Frutiger Aero Design System */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Atmospheric Color Palette */
+  --aero-sky-top: #cbeefe;
+  --aero-sky-mid: #e0f2fe;
+  --aero-mint-glow: #e6fcf5;
+  --aero-aqua: #00b4d8;
+  --aero-azure: #0077b6;
+  --aero-deep-blue: #034f84;
+  --aero-emerald: #10b981;
+  --aero-emerald-dark: #059669;
+  --aero-ruby: #ef4444;
+  --aero-amber: #f59e0b;
+
+  /* Typography Colors */
+  --text-main: #0f172a;
+  --text-muted: #334155;
+  --text-subtle: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Glassmorphism Surface Tokens */
+  --glass-bg-primary: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(240, 249, 255, 0.6) 100%);
+  --glass-bg-card: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 253, 250, 0.65) 100%);
+  --glass-bg-accent: linear-gradient(135deg, rgba(224, 242, 254, 0.9) 0%, rgba(186, 230, 253, 0.68) 100%);
+  --glass-bg-dock: linear-gradient(135deg, rgba(236, 253, 245, 0.92) 0%, rgba(209, 250, 229, 0.75) 100%);
+  
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --glass-border-subtle: rgba(186, 230, 253, 0.6);
+  --glass-shadow: 0 16px 36px -8px rgba(0, 119, 182, 0.14), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --glass-highlight: inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  
+  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #090d16;
-  color: #e2e8f0;
+  background: #e0f2fe;
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(0, 180, 216, 0.22) 0px, transparent 50%),
+    radial-gradient(at 85% 12%, rgba(16, 185, 129, 0.18) 0px, transparent 45%),
+    radial-gradient(at 50% 50%, rgba(224, 242, 254, 0.6) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(0, 119, 182, 0.2) 0px, transparent 50%),
+    radial-gradient(at 10% 85%, rgba(167, 243, 208, 0.25) 0px, transparent 45%),
+    linear-gradient(180deg, #dbeafe 0%, #e0f7fa 45%, #f0fdf4 100%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
 code, pre, .font-mono {
@@ -18,103 +67,497 @@ code, pre, .font-mono {
   font-feature-settings: 'tnum' on, 'zero' on;
 }
 
-/* Scrollbar styling */
+/* Custom Aero Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: rgba(224, 242, 254, 0.5);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 2px;
+  background: rgba(0, 180, 216, 0.35);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
-/* Industrial Panel Containers */
-.glass-panel {
-  background: #0d1320;
-  border: 1px solid #1e293b;
-}
-
-.glass-panel-accent {
-  background: #101726;
-  border: 1px solid #2563eb;
+  background: rgba(0, 119, 182, 0.5);
 }
 
 /* ==========================================================================
-   TRAFFIC LIGHT (AMPEL) INDUSTRIAL TELEMETRY MONITOR
-   Reads as a deterministic industrial status indicator, not an arcade fixture.
+   AERO GLASS SURFACES
+   ========================================================================== */
+
+.glass-panel {
+  background: var(--glass-bg-primary);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 
+    var(--glass-highlight),
+    var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  color: var(--text-main);
+}
+
+.glass-panel-accent {
+  background: var(--glass-bg-accent);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    0 14px 36px -6px rgba(0, 119, 182, 0.18);
+  border-radius: var(--radius-lg);
+  color: var(--text-main);
+}
+
+/* Header Glass Bar */
+.aero-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.72) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 20px rgba(0, 119, 182, 0.08);
+}
+
+/* ==========================================================================
+   THREE-STATE AMPEL LENS MONITOR (JEWEL SKEUOMORPHISM)
    ========================================================================== */
 
 .traffic-light-housing {
-  background: #05080f;
-  border: 1px solid #1e293b;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(224, 242, 254, 0.85) 50%, rgba(186, 230, 253, 0.9) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -2px 4px rgba(0, 119, 182, 0.12),
+    0 6px 18px rgba(0, 119, 182, 0.14);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
 }
 
 .ampel-lens {
   position: relative;
-  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
-  opacity: 0.3;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  display: inline-block;
 }
 
-/* Inactive Lenses: Darkened indicator lamps */
+/* 3D Curved Specular Reflection Bubble (Mid-2000s Aero highlight) */
+.ampel-lens::after {
+  content: '';
+  position: absolute;
+  top: 8%;
+  left: 14%;
+  width: 48%;
+  height: 32%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.2) 100%);
+  transform: rotate(-25deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bottom bounce rim reflection */
+.ampel-lens::before {
+  content: '';
+  position: absolute;
+  bottom: 8%;
+  left: 22%;
+  width: 54%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Unlit Lenses (Translucent tinted glass with inner shadow) */
 .lens-red {
-  background: #2b0b0b;
-  border: 1px solid #491212;
-}
-.lens-yellow {
-  background: #2b2006;
-  border: 1px solid #4a3809;
-}
-.lens-green {
-  background: #062319;
-  border: 1px solid #0b3d2b;
+  background: radial-gradient(circle at 35% 30%, #fca5a5 0%, #b91c1c 45%, #7f1d1d 85%, #450a0a 100%);
+  border: 1px solid rgba(185, 28, 28, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(255, 255, 255, 0.6);
+  opacity: 0.38;
 }
 
-/* Active State: Clean, high-contrast, deterministic illumination without arcade bloom */
+.lens-yellow {
+  background: radial-gradient(circle at 35% 30%, #fef08a 0%, #ca8a04 45%, #854d0e 85%, #422006 100%);
+  border: 1px solid rgba(202, 138, 4, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(255, 255, 255, 0.6);
+  opacity: 0.38;
+}
+
+.lens-green {
+  background: radial-gradient(circle at 35% 30%, #86efac 0%, #059669 45%, #065f46 85%, #022c22 100%);
+  border: 1px solid rgba(5, 150, 105, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(255, 255, 255, 0.6);
+  opacity: 0.38;
+}
+
+/* Active RED State (Ruby Glass Orb) */
 .ampel-active-red .lens-red {
   opacity: 1;
-  background: #ef4444;
-  border: 1px solid #fca5a5;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  background: radial-gradient(circle at 35% 30%, #fee2e2 0%, #ef4444 40%, #dc2626 75%, #991b1b 100%);
+  border: 1px solid #fecaca;
+  box-shadow: 
+    0 0 14px rgba(239, 68, 68, 0.8),
+    0 0 28px rgba(239, 68, 68, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(153, 27, 27, 0.6);
+  transform: scale(1.08);
 }
 
+/* Active YELLOW State (Liquid Amber Orb) */
 .ampel-active-yellow .lens-yellow {
   opacity: 1;
-  background: #eab308;
+  background: radial-gradient(circle at 35% 30%, #fefce8 0%, #eab308 40%, #d97706 75%, #92400e 100%);
   border: 1px solid #fef08a;
-  box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+  box-shadow: 
+    0 0 14px rgba(234, 179, 8, 0.8),
+    0 0 28px rgba(234, 179, 8, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(146, 64, 14, 0.6);
+  transform: scale(1.08);
 }
 
+/* Active GREEN State (Emerald Aurora Orb) */
 .ampel-active-green .lens-green {
   opacity: 1;
-  background: #10b981;
-  border: 1px solid #6ee7b7;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  background: radial-gradient(circle at 35% 30%, #ecfdf5 0%, #10b981 40%, #059669 75%, #047857 100%);
+  border: 1px solid #a7f3d0;
+  box-shadow: 
+    0 0 14px rgba(16, 185, 129, 0.85),
+    0 0 28px rgba(16, 185, 129, 0.45),
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(4, 120, 87, 0.6);
+  transform: scale(1.08);
 }
 
-/* AG Grid Dark Theme Customization */
+/* ==========================================================================
+   INTERACTIVE GEL BUTTONS & CONTROLS ("GEL-PILL" AESTHETIC)
+   ========================================================================== */
+
+.aero-btn-primary {
+  position: relative;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 49%, #0369a1 51%, #0284c7 100%);
+  border: 1px solid #0284c7;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.85),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(2, 132, 199, 0.32);
+  text-shadow: 0 1px 2px rgba(0, 50, 100, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.aero-btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 6%;
+  right: 6%;
+  height: 44%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.12) 100%);
+  pointer-events: none;
+}
+
+.aero-btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    0 6px 18px rgba(2, 132, 199, 0.42);
+}
+
+.aero-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(2, 132, 199, 0.2);
+}
+
+.aero-btn-secondary {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.88) 50%, rgba(224, 242, 254, 0.92) 100%);
+  border: 1px solid rgba(186, 230, 253, 0.9);
+  color: #0369a1 !important;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    0 2px 8px rgba(0, 119, 182, 0.08);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.aero-btn-secondary::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 6%;
+  right: 6%;
+  height: 42%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.2) 100%);
+  pointer-events: none;
+}
+
+.aero-btn-secondary:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%);
+  border-color: #38bdf8;
+  color: #0284c7 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 119, 182, 0.16);
+}
+
+.aero-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* Quick scenario triggers (chips) */
+.demo-chip {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 249, 255, 0.8) 100%);
+  border: 1px solid rgba(186, 230, 253, 0.8);
+  color: #0369a1;
+  border-radius: var(--radius-pill);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(0, 119, 182, 0.06);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.demo-chip::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 10%;
+  right: 10%;
+  height: 40%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 100%);
+  pointer-events: none;
+}
+
+.demo-chip:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #bae6fd 100%);
+  border-color: #0284c7;
+  color: #0284c7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 119, 182, 0.14);
+}
+
+/* ==========================================================================
+   AERO BADGES & STATUS PILLS
+   ========================================================================== */
+
+.aero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.aero-badge-green {
+  background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #065f46;
+  border: 1px solid #86efac;
+}
+
+.aero-badge-red {
+  background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.aero-badge-yellow {
+  background: linear-gradient(180deg, #fef9c3 0%, #fef08a 100%);
+  color: #854d0e;
+  border: 1px solid #fde047;
+}
+
+.aero-badge-cyan {
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+/* Status Badge in Header / Lens */
+.aero-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.aero-status-green {
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #047857;
+  border: 1px solid #6ee7b7;
+}
+
+.aero-status-red {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #be123c;
+  border: 1px solid #fda4af;
+}
+
+.aero-status-yellow {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+/* ==========================================================================
+   CHAT CONSOLE & MESSAGE BUBBLES
+   ========================================================================== */
+
+#chat-transcript {
+  background: linear-gradient(180deg, rgba(240, 249, 255, 0.6) 0%, rgba(224, 242, 254, 0.4) 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(186, 230, 253, 0.5);
+  box-shadow: inset 0 2px 6px rgba(0, 119, 182, 0.05);
+  padding: 12px;
+}
+
+.aero-bubble-user {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #ffffff;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.65),
+    0 4px 14px rgba(2, 132, 199, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 10px 14px;
+}
+
+.aero-bubble-bot {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 249, 255, 0.9) 100%);
+  color: var(--text-main);
+  border-radius: 16px 16px 16px 4px;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    0 4px 16px rgba(0, 119, 182, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  padding: 12px 14px;
+}
+
+/* Chat Input Styling */
+#chat-input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #0f172a !important;
+  border: 1.5px solid rgba(186, 230, 253, 0.9) !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 119, 182, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+#chat-input:focus {
+  border-color: #0284c7 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ==========================================================================
+   VERIFIED VAULT (PAYPAL CHECKOUT DOCK)
+   ========================================================================== */
+
+#deal-unlocked-card {
+  background: var(--glass-bg-dock);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid rgba(16, 185, 129, 0.6);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    0 16px 36px -6px rgba(16, 185, 129, 0.22);
+  border-radius: var(--radius-lg);
+  color: var(--text-main);
+}
+
+/* ==========================================================================
+   AG GRID NEO-FRUTIGER AERO THEME OVERRIDES
+   ========================================================================== */
+
+.ag-theme-alpine,
 .ag-theme-alpine-dark {
-  --ag-background-color: #0b0f19 !important;
-  --ag-header-background-color: #0f172a !important;
-  --ag-odd-row-background-color: #090d16 !important;
-  --ag-border-color: #1e293b !important;
-  --ag-row-hover-color: #131d31 !important;
+  --ag-background-color: rgba(255, 255, 255, 0.76) !important;
+  --ag-header-background-color: linear-gradient(180deg, rgba(240, 249, 255, 0.95) 0%, rgba(224, 242, 254, 0.9) 100%) !important;
+  --ag-odd-row-background-color: rgba(248, 250, 252, 0.5) !important;
+  --ag-border-color: rgba(186, 230, 253, 0.65) !important;
+  --ag-row-border-color: rgba(224, 242, 254, 0.75) !important;
+  --ag-row-hover-color: rgba(224, 242, 254, 0.75) !important;
+  --ag-header-foreground-color: #0369a1 !important;
+  --ag-foreground-color: #0f172a !important;
+  --ag-data-color: #0f172a !important;
   --ag-font-family: var(--font-sans) !important;
   --ag-font-size: 12px !important;
-  --ag-header-height: 36px !important;
-  --ag-row-height: 34px !important;
+  --ag-header-height: 38px !important;
+  --ag-row-height: 36px !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.9),
+    0 8px 24px rgba(0, 119, 182, 0.08) !important;
 }
 
-/* Telemetry table cell formatting */
+.ag-theme-alpine .ag-header-cell-label,
 .ag-theme-alpine-dark .ag-header-cell-label {
   font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
+  letter-spacing: 0.04em;
+  color: #0369a1 !important;
+}
+
+.ag-theme-alpine .ag-cell,
+.ag-theme-alpine-dark .ag-cell {
+  color: #0f172a !important;
+  display: flex;
+  align-items: center;
+}
+
+/* KPI Card Floating Widgets */
+.kpi-widget {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.7) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    0 8px 20px -4px rgba(0, 119, 182, 0.1);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    0 12px 28px -4px rgba(0, 119, 182, 0.16);
+}
+
+/* Receipt Modal Glassmorphism */
+#receipt-modal .glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 253, 250, 0.92) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    0 24px 48px -12px rgba(0, 119, 182, 0.25);
+  border-radius: var(--radius-xl);
 }

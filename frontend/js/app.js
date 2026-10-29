@@ -123,31 +123,33 @@ function renderProductsGrid() {
 
   DOM.productsGrid.innerHTML = AppState.products.map(p => {
     const isSelected = p.sku === AppState.selectedSku;
-    const borderClass = isSelected ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-slate-800 hover:border-slate-700';
+    const borderClass = isSelected
+      ? 'border-cyan-500 ring-2 ring-cyan-400/40 shadow-md shadow-cyan-500/10'
+      : 'border-white/80 hover:border-cyan-300';
 
     return `
-      <div class="glass-panel p-4 rounded-lg ${borderClass} transition-colors flex flex-col justify-between" id="card-${p.sku}">
+      <div class="glass-panel p-4 ${borderClass} transition-all duration-200 flex flex-col justify-between" id="card-${p.sku}">
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 text-blue-400 border border-slate-800 font-bold">
+            <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200 font-bold">
               ${p.sku}
             </span>
-            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
               ${p.category}
             </span>
           </div>
-          <h3 class="text-sm font-bold text-white mb-1 leading-snug">${p.name}</h3>
-          <p class="text-xs text-slate-400 mb-3 line-clamp-2">${p.description}</p>
+          <h3 class="text-sm font-bold text-slate-900 mb-1 leading-snug">${p.name}</h3>
+          <p class="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">${p.description}</p>
         </div>
 
         <div>
-          <div class="flex items-baseline justify-between pt-2.5 border-t border-slate-800 mb-3 font-mono">
+          <div class="flex items-baseline justify-between pt-2.5 border-t border-sky-100 mb-3 font-mono">
             <div>
-              <span class="text-[10px] text-slate-400 uppercase block">List Price</span>
-              <span class="text-base font-bold text-white">$${p.retail_price.toFixed(2)}</span>
+              <span class="text-[10px] text-slate-500 uppercase block font-semibold">List Price</span>
+              <span class="text-base font-extrabold text-slate-900">$${p.retail_price.toFixed(2)}</span>
             </div>
             <div class="text-right">
-              <span class="text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
+              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 Negotiable
               </span>
             </div>
@@ -156,12 +158,12 @@ function renderProductsGrid() {
           <div class="grid grid-cols-2 gap-2 font-mono text-xs">
             <button 
               onclick="buyAtRetail('${p.sku}')"
-              class="w-full py-1.5 px-3 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition font-medium">
+              class="aero-btn-secondary w-full py-1.5 px-3 text-xs font-semibold">
               Buy Retail
             </button>
             <button 
               onclick="selectProduct('${p.sku}')"
-              class="w-full py-1.5 px-3 rounded bg-blue-600 hover:bg-blue-500 text-white transition font-medium">
+              class="aero-btn-primary w-full py-1.5 px-3 text-xs font-semibold">
               Negotiate
             </button>
           </div>
@@ -179,10 +181,11 @@ function selectProduct(sku) {
     const card = document.getElementById(`card-${p.sku}`);
     if (!card) return;
     const isSelected = p.sku === sku;
-    card.classList.toggle('border-blue-500', isSelected);
-    card.classList.toggle('ring-1', isSelected);
-    card.classList.toggle('ring-blue-500/30', isSelected);
-    card.classList.toggle('border-slate-800', !isSelected);
+    card.classList.toggle('border-cyan-500', isSelected);
+    card.classList.toggle('ring-2', isSelected);
+    card.classList.toggle('ring-cyan-400/40', isSelected);
+    card.classList.toggle('shadow-md', isSelected);
+    card.classList.toggle('border-white/80', !isSelected);
   });
 
   if (DOM.selectedProductTitle) DOM.selectedProductTitle.textContent = AppState.selectedProduct.name;
@@ -201,7 +204,7 @@ function setTrafficLight(state) {
   if (state === 'RED') {
     DOM.ampelHousing.classList.add('ampel-active-red');
     if (DOM.ampelStatusBadge) {
-      DOM.ampelStatusBadge.className = 'px-2 py-0.5 rounded text-xs font-mono font-bold bg-red-950/80 border border-red-600 text-red-300';
+      DOM.ampelStatusBadge.className = 'aero-status-badge aero-status-red text-xs font-mono font-bold';
       DOM.ampelStatusBadge.textContent = 'STATE: RED';
     }
     return;
@@ -210,7 +213,7 @@ function setTrafficLight(state) {
   if (state === 'GREEN') {
     DOM.ampelHousing.classList.add('ampel-active-green');
     if (DOM.ampelStatusBadge) {
-      DOM.ampelStatusBadge.className = 'px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-950/80 border border-emerald-500 text-emerald-300';
+      DOM.ampelStatusBadge.className = 'aero-status-badge aero-status-green text-xs font-mono font-bold';
       DOM.ampelStatusBadge.textContent = 'STATE: GREEN';
     }
     return;
@@ -218,7 +221,7 @@ function setTrafficLight(state) {
 
   DOM.ampelHousing.classList.add('ampel-active-yellow');
   if (DOM.ampelStatusBadge) {
-    DOM.ampelStatusBadge.className = 'px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-950/80 border border-amber-600 text-amber-300';
+    DOM.ampelStatusBadge.className = 'aero-status-badge aero-status-yellow text-xs font-mono font-bold';
     DOM.ampelStatusBadge.textContent = 'STATE: YELLOW';
   }
 }
@@ -228,14 +231,14 @@ function appendMessage({ role, content, trafficLight, reasoningSummary, agreedPr
 
   const isUser = role === 'user';
   const bubbleWrapper = document.createElement('div');
-  bubbleWrapper.className = `flex gap-2.5 mb-3 ${isUser ? 'justify-end' : 'justify-start'}`;
+  bubbleWrapper.className = `flex gap-2.5 mb-3.5 ${isUser ? 'justify-end' : 'justify-start'}`;
 
   if (isUser) {
     bubbleWrapper.innerHTML = `
-      <div class="max-w-[80%] bg-blue-600/90 text-white rounded p-3 text-xs leading-relaxed font-sans">
+      <div class="max-w-[80%] aero-bubble-user text-xs leading-relaxed font-sans">
         ${escapeHtml(content)}
       </div>
-      <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-mono text-slate-300 flex-shrink-0">
+      <div class="w-7 h-7 rounded-full bg-sky-100 border border-sky-300 flex items-center justify-center text-[10px] font-mono text-sky-800 font-bold flex-shrink-0 shadow-sm">
         USER
       </div>
     `;
@@ -243,16 +246,16 @@ function appendMessage({ role, content, trafficLight, reasoningSummary, agreedPr
     let pricePill = '';
     if (trafficLight === 'GREEN' && agreedPrice) {
       pricePill = `
-        <div class="mt-2 text-xs font-mono bg-emerald-950/60 border border-emerald-700 text-emerald-300 px-2.5 py-1 rounded flex items-center justify-between">
-          <span>Agreed Price:</span>
-          <span class="font-bold text-emerald-200">$${agreedPrice.toFixed(2)}</span>
+        <div class="mt-2 text-xs font-mono bg-emerald-50 border border-emerald-300 text-emerald-800 px-3 py-1.5 rounded-lg flex items-center justify-between shadow-sm">
+          <span class="font-semibold">Agreed Price:</span>
+          <span class="font-extrabold text-emerald-700 text-sm">$${agreedPrice.toFixed(2)}</span>
         </div>
       `;
     } else if (counterPrice) {
       pricePill = `
-        <div class="mt-2 text-xs font-mono bg-amber-950/60 border border-amber-700 text-amber-300 px-2.5 py-1 rounded flex items-center justify-between">
-          <span>Counter-Offer:</span>
-          <span class="font-bold text-amber-200">$${counterPrice.toFixed(2)}</span>
+        <div class="mt-2 text-xs font-mono bg-amber-50 border border-amber-300 text-amber-800 px-3 py-1.5 rounded-lg flex items-center justify-between shadow-sm">
+          <span class="font-semibold">Counter-Offer:</span>
+          <span class="font-extrabold text-amber-700 text-sm">$${counterPrice.toFixed(2)}</span>
         </div>
       `;
     }
@@ -260,9 +263,9 @@ function appendMessage({ role, content, trafficLight, reasoningSummary, agreedPr
     let reasoningBox = '';
     if (reasoningSummary) {
       const isFirewall = reasoningSummary.includes('[SECURITY') || reasoningSummary.includes('[GUARDRAIL');
-      const badgeClass = isFirewall ? 'text-red-400 bg-red-950/60 border-red-800' : 'text-slate-400 bg-slate-900 border-slate-800';
+      const badgeClass = isFirewall ? 'text-rose-800 bg-rose-50 border-rose-300' : 'text-slate-600 bg-sky-50 border-sky-200';
       reasoningBox = `
-        <div class="mt-2 text-[11px] font-mono px-2 py-1 rounded border ${badgeClass} flex items-start gap-1.5">
+        <div class="mt-2 text-[11px] font-mono px-2.5 py-1.5 rounded border ${badgeClass} flex items-start gap-1.5">
           <span class="font-bold flex-shrink-0">${isFirewall ? 'GUARD:' : 'MODEL:'}</span>
           <span class="leading-tight">${escapeHtml(reasoningSummary)}</span>
         </div>
@@ -270,17 +273,17 @@ function appendMessage({ role, content, trafficLight, reasoningSummary, agreedPr
     }
 
     bubbleWrapper.innerHTML = `
-      <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-mono text-blue-400 flex-shrink-0">
+      <div class="w-7 h-7 rounded-full bg-cyan-100 border border-cyan-300 flex items-center justify-center text-[10px] font-mono text-cyan-800 font-bold flex-shrink-0 shadow-sm">
         BOT
       </div>
-      <div class="max-w-[85%] bg-slate-900 text-slate-200 border border-slate-800 rounded p-3 text-xs leading-relaxed">
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <span class="text-[11px] font-mono font-bold text-slate-400 uppercase">AmpelBot</span>
-          <span class="text-[10px] font-mono px-1.5 py-0.2 rounded ${trafficLight === 'GREEN' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : trafficLight === 'RED' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+      <div class="max-w-[85%] aero-bubble-bot text-xs leading-relaxed">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <span class="text-[11px] font-mono font-bold text-slate-700 uppercase tracking-wider">AmpelBot</span>
+          <span class="aero-badge ${trafficLight === 'GREEN' ? 'aero-badge-green' : trafficLight === 'RED' ? 'aero-badge-red' : 'aero-badge-yellow'} font-mono text-[10px] font-bold">
             ${trafficLight || 'INFO'}
           </span>
         </div>
-        <p class="text-xs text-slate-200 font-sans">${escapeHtml(content)}</p>
+        <p class="text-xs text-slate-800 font-sans leading-relaxed">${escapeHtml(content)}</p>
         ${pricePill}
         ${reasoningBox}
       </div>
@@ -305,9 +308,9 @@ async function handleSendMessage(userText) {
   typingIndicator.id = 'typing-indicator';
   typingIndicator.className = 'flex gap-2.5 mb-3';
   typingIndicator.innerHTML = `
-    <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-mono text-blue-400">BOT</div>
-    <div class="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-slate-400">
-      Evaluating offer...
+    <div class="w-7 h-7 rounded-full bg-cyan-100 border border-cyan-300 flex items-center justify-center text-[10px] font-mono text-cyan-800 font-bold">BOT</div>
+    <div class="aero-bubble-bot px-3 py-2 text-xs font-mono text-slate-600">
+      Evaluating offer terms...
     </div>
   `;
   DOM.chatTranscript.appendChild(typingIndicator);
@@ -446,16 +449,6 @@ function showDealUnlockedCard(agreedPrice, dealToken, bundledSkus = null) {
     };
   }
 }
-        showReceiptModal(result.capture, result.order);
-      } catch (err) {
-        alert(`Checkout simulation failed: ${err.message}`);
-      } finally {
-        DOM.instantCheckoutBtn.disabled = false;
-        DOM.instantCheckoutBtn.textContent = 'Execute Direct Sandbox Capture';
-      }
-    };
-  }
-}
 
 function buyAtRetail(sku) {
   selectProduct(sku);
@@ -481,31 +474,31 @@ function showReceiptModal(captureData, orderData = null) {
 
   DOM.receiptDetails.innerHTML = `
     <div class="space-y-2 font-mono text-xs">
-      <div class="flex justify-between border-b border-slate-800 pb-1.5">
-        <span class="text-slate-400">Order ID:</span>
-        <span class="text-white font-bold">${captureData.order_id || (orderData && orderData.order_id)}</span>
+      <div class="flex justify-between border-b border-emerald-100 pb-1.5">
+        <span class="text-slate-500 font-semibold">Order ID:</span>
+        <span class="text-slate-900 font-bold">${captureData.order_id || (orderData && orderData.order_id)}</span>
       </div>
-      <div class="flex justify-between border-b border-slate-800 pb-1.5">
-        <span class="text-slate-400">Status:</span>
-        <span class="text-emerald-400 font-bold">${captureData.status || 'COMPLETED'}</span>
+      <div class="flex justify-between border-b border-emerald-100 pb-1.5">
+        <span class="text-slate-500 font-semibold">Status:</span>
+        <span class="aero-badge aero-badge-green font-bold text-[11px]">${captureData.status || 'COMPLETED'}</span>
       </div>
-      <div class="flex justify-between border-b border-slate-800 pb-1.5">
-        <span class="text-slate-400">SKU:</span>
-        <span class="text-white">${AppState.selectedSku}</span>
+      <div class="flex justify-between border-b border-emerald-100 pb-1.5">
+        <span class="text-slate-500 font-semibold">SKU:</span>
+        <span class="text-slate-900 font-bold">${AppState.selectedSku}</span>
       </div>
-      <div class="flex justify-between border-b border-slate-800 pb-1.5">
-        <span class="text-slate-400">Settled Amount:</span>
-        <span class="text-emerald-300 font-bold">
+      <div class="flex justify-between border-b border-emerald-100 pb-1.5">
+        <span class="text-slate-500 font-semibold">Settled Amount:</span>
+        <span class="text-emerald-700 font-extrabold text-sm">
           $${(captureData.amount_captured || AppState.agreedPrice).toFixed(2)} ${captureData.currency || 'USD'}
         </span>
       </div>
-      <div class="flex justify-between border-b border-slate-800 pb-1.5">
-        <span class="text-slate-400">Capture ID:</span>
-        <span class="text-slate-300">${captureData.capture_id || 'CAP-' + Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
+      <div class="flex justify-between border-b border-emerald-100 pb-1.5">
+        <span class="text-slate-500 font-semibold">Capture ID:</span>
+        <span class="text-slate-700">${captureData.capture_id || 'CAP-' + Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
       </div>
       <div class="flex justify-between">
-        <span class="text-slate-400">Timestamp:</span>
-        <span class="text-slate-400">${new Date(captureData.captured_at || Date.now()).toISOString()}</span>
+        <span class="text-slate-500 font-semibold">Timestamp:</span>
+        <span class="text-slate-600">${new Date(captureData.captured_at || Date.now()).toISOString()}</span>
       </div>
     </div>
   `;
@@ -547,7 +540,7 @@ function initAGGridTelemetry() {
       headerName: 'Event ID',
       field: 'id',
       width: 120,
-      cellClass: 'font-mono text-xs text-blue-400',
+      cellClass: 'font-mono text-xs text-sky-700 font-semibold',
     },
     {
       headerName: 'Timestamp',
@@ -560,13 +553,13 @@ function initAGGridTelemetry() {
           return params.value;
         }
       },
-      cellClass: 'font-mono text-xs text-slate-400',
+      cellClass: 'font-mono text-xs text-slate-500',
     },
     {
       headerName: 'SKU',
       field: 'sku',
-      width: 95,
-      cellClass: 'font-mono text-xs text-white',
+      width: 110,
+      cellClass: 'font-mono text-xs text-slate-900 font-bold',
     },
     {
       headerName: 'State',
@@ -575,12 +568,12 @@ function initAGGridTelemetry() {
       cellRenderer: params => {
         const val = params.value;
         if (val === 'GREEN') {
-          return `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">GREEN</span>`;
+          return `<span class="aero-badge aero-badge-green font-mono text-[11px] font-bold">GREEN</span>`;
         }
         if (val === 'RED') {
-          return `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-red-950 text-red-400 border border-red-800">RED</span>`;
+          return `<span class="aero-badge aero-badge-red font-mono text-[11px] font-bold">RED</span>`;
         }
-        return `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-amber-950 text-amber-400 border border-amber-800">YELLOW</span>`;
+        return `<span class="aero-badge aero-badge-yellow font-mono text-[11px] font-bold">YELLOW</span>`;
       },
     },
     {
@@ -588,34 +581,34 @@ function initAGGridTelemetry() {
       field: 'retail_price',
       width: 105,
       valueFormatter: params => params.value ? `$${params.value.toFixed(2)}` : '—',
-      cellClass: 'font-mono text-xs text-slate-300',
+      cellClass: 'font-mono text-xs text-slate-700 font-medium',
     },
     {
       headerName: 'Buyer Offer',
       field: 'buyer_offer',
       width: 110,
       valueFormatter: params => params.value ? `$${params.value.toFixed(2)}` : '—',
-      cellClass: 'font-mono text-xs text-amber-300',
+      cellClass: 'font-mono text-xs text-amber-700 font-bold',
     },
     {
       headerName: 'Settled / Counter',
       field: 'final_price',
       width: 130,
       valueFormatter: params => params.value ? `$${params.value.toFixed(2)}` : '—',
-      cellClass: 'font-mono text-xs font-bold text-white',
+      cellClass: 'font-mono text-xs font-bold text-slate-900',
     },
     {
       headerName: 'Variance %',
       field: 'discount_pct',
       width: 105,
       valueFormatter: params => params.value ? `${params.value.toFixed(1)}%` : '0%',
-      cellClass: 'font-mono text-xs text-emerald-400',
+      cellClass: 'font-mono text-xs text-emerald-700 font-semibold',
     },
     {
       headerName: 'Margin Defense',
       field: 'margin_protected',
-      width: 165,
-      cellClass: 'font-mono text-xs text-slate-300',
+      width: 175,
+      cellClass: 'font-mono text-xs text-slate-700',
     },
     {
       headerName: 'Firewall Intercept',
@@ -623,9 +616,9 @@ function initAGGridTelemetry() {
       width: 140,
       cellRenderer: params => {
         if (params.value) {
-          return `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-red-950 text-red-400 border border-red-800">INTERCEPTED</span>`;
+          return `<span class="aero-badge aero-badge-red font-mono text-[11px] font-bold">INTERCEPTED</span>`;
         }
-        return `<span class="px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 border border-slate-700">PROTECTED</span>`;
+        return `<span class="aero-badge aero-badge-cyan font-mono text-[11px]">PROTECTED</span>`;
       },
     },
     {
@@ -633,7 +626,7 @@ function initAGGridTelemetry() {
       field: 'reasoning_summary',
       flex: 1,
       minWidth: 260,
-      cellClass: 'text-xs font-mono text-slate-300',
+      cellClass: 'text-xs font-mono text-slate-600',
     },
   ];
 
@@ -645,8 +638,8 @@ function initAGGridTelemetry() {
       filter: true,
       resizable: true,
     },
-    rowHeight: 34,
-    headerHeight: 36,
+    rowHeight: 36,
+    headerHeight: 38,
     animateRows: false,
   };
 
